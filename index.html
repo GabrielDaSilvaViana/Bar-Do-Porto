@@ -13,10 +13,12 @@
   }
   *{box-sizing:border-box}
   html,body{margin:0}
+  html{font-size:18px; -webkit-text-size-adjust:100%; text-size-adjust:100%}
+  @media (max-width:420px){ html{font-size:19px} }
   body{
     background:var(--bg); color:var(--txt);
     font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
-    padding-bottom:calc(150px + env(safe-area-inset-bottom));
+    padding-bottom:calc(180px + env(safe-area-inset-bottom));
     -webkit-tap-highlight-color:transparent;
   }
   header{
@@ -26,8 +28,8 @@
     padding:12px 16px; padding-top:calc(12px + env(safe-area-inset-top));
   }
   .brand{display:flex; align-items:center; gap:10px; max-width:640px; margin:0 auto}
-  .brand svg{width:34px; height:34px; color:var(--acc); flex:none}
-  .brand h1{font-size:1.25rem; margin:0; letter-spacing:.02em}
+  .brand svg{width:40px; height:40px; color:var(--acc); flex:none}
+  .brand h1{font-size:1.4rem; margin:0; letter-spacing:.02em}
   .brand small{display:block; color:var(--muted); font-size:.78rem; font-weight:400; letter-spacing:0}
   main{max-width:640px; margin:0 auto; padding:16px}
   main > section{display:none}
@@ -35,20 +37,20 @@
 
   input,textarea{
     width:100%; background:var(--card); border:1px solid var(--line); color:var(--txt);
-    border-radius:10px; padding:11px 12px; font:inherit; font-size:16px;
+    border-radius:12px; padding:14px 14px; font:inherit; font-size:1rem;
   }
   textarea{resize:vertical; min-height:64px}
   input:focus,textarea:focus{outline:2px solid var(--acc); outline-offset:-1px; border-color:transparent}
   label{display:block; font-size:.85rem; color:var(--muted); margin:14px 0 6px}
   label:first-child{margin-top:0}
   button{
-    font:inherit; cursor:pointer; border:0; border-radius:10px; padding:10px 14px;
+    font:inherit; cursor:pointer; border:0; border-radius:12px; padding:13px 18px; min-height:48px;
     background:var(--card2); color:var(--txt);
   }
   button:disabled{opacity:.35; cursor:default}
   button.prim{background:var(--acc); color:#1a1205; font-weight:700}
   button.perigo{color:var(--bad)}
-  button.peq{padding:7px 11px; font-size:.85rem}
+  button.peq{padding:10px 14px; font-size:.9rem; min-height:44px}
   button.on{background:#1d4a3b; color:var(--ok)}
 
   .barra{display:flex; gap:8px; align-items:center; margin-bottom:6px}
@@ -64,19 +66,22 @@
     padding:12px 14px; margin-bottom:8px;
   }
   .item-info{flex:1; min-width:0}
-  .item-nome{font-weight:600}
+  .item-nome{font-weight:600; font-size:1.05rem}
+  .item-preco{font-size:1.05rem}
   .item-desc{color:var(--muted); font-size:.85rem; margin-top:2px}
   .item-preco{font-weight:700; color:var(--acc); white-space:nowrap; font-variant-numeric:tabular-nums}
   .item-acoes{width:100%; display:flex; gap:8px; justify-content:flex-end; margin-top:4px}
   .aviso-edicao{background:#2a2410; border:1px solid #5a4a1c; color:#f5d48f; border-radius:10px; padding:10px 12px; font-size:.85rem; margin-top:10px}
 
   /* Pedidos */
-  .resumo{display:grid; grid-template-columns:repeat(3,1fr); gap:8px; margin-bottom:12px}
-  .stat{background:var(--card); border:1px solid var(--line); border-radius:12px; padding:10px}
-  .stat span{display:block; font-size:.72rem; color:var(--muted)}
-  .stat b{display:block; font-size:1.05rem; margin-top:2px; font-variant-numeric:tabular-nums}
+  .resumo{display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-bottom:12px}
+  .resumo .stat:first-child{grid-column:1 / -1; display:flex; justify-content:space-between; align-items:center}
+  .resumo .stat:first-child b{margin-top:0}
+  .stat{background:var(--card); border:1px solid var(--line); border-radius:12px; padding:12px}
+  .stat span{display:block; font-size:.8rem; color:var(--muted)}
+  .stat b{display:block; font-size:1.2rem; margin-top:2px; font-variant-numeric:tabular-nums}
   .chips{display:flex; gap:6px; margin:10px 0 12px; overflow-x:auto}
-  .chips button{border-radius:99px; padding:7px 14px; font-size:.88rem; background:var(--card); border:1px solid var(--line)}
+  .chips button{border-radius:99px; padding:10px 18px; min-height:44px; font-size:.95rem; white-space:nowrap; background:var(--card); border:1px solid var(--line)}
   .chips button.ativa{background:var(--acc); color:#1a1205; border-color:var(--acc); font-weight:700}
   .pedido{
     background:var(--card); border:1px solid var(--line); border-left:4px solid var(--acc);
@@ -98,6 +103,7 @@
   .ped-rodape{display:flex; align-items:center; justify-content:space-between; gap:8px; margin-top:8px; flex-wrap:wrap; border-top:1px dashed var(--line); padding-top:10px}
   .ped-total{font-weight:700; font-variant-numeric:tabular-nums}
   .acoes{display:flex; gap:6px; flex-wrap:wrap}
+  .pedido .acoes{display:grid; grid-template-columns:1fr 1fr; gap:8px; width:100%}
 
   /* Ajustes */
   .bloco{background:var(--card); border:1px solid var(--line); border-radius:12px; padding:14px; margin-bottom:12px}
@@ -113,16 +119,16 @@
   }
   nav.bottom .wrap{display:flex; width:100%; max-width:640px}
   nav.bottom button{
-    flex:1; background:none; border-radius:0; padding:10px 4px 9px; color:var(--muted);
-    display:flex; flex-direction:column; align-items:center; gap:3px; font-size:.75rem;
+    flex:1; background:none; border-radius:0; padding:10px 4px 10px; color:var(--muted);
+    display:flex; flex-direction:column; align-items:center; gap:4px; font-size:.8rem;
   }
-  nav.bottom button svg{width:22px; height:22px}
+  nav.bottom button svg{width:28px; height:28px}
   nav.bottom button.ativa{color:var(--acc)}
   .fab{
     position:fixed; z-index:7; right:max(16px, calc(50% - 304px));
-    bottom:calc(78px + env(safe-area-inset-bottom));
+    bottom:calc(96px + env(safe-area-inset-bottom));
     background:var(--acc); color:#1a1205; font-weight:700; border-radius:99px;
-    padding:14px 20px; box-shadow:0 8px 24px rgba(0,0,0,.45); font-size:1rem;
+    padding:16px 24px; box-shadow:0 8px 24px rgba(0,0,0,.45); font-size:1.05rem;
   }
   .fab[hidden]{display:none}
 
@@ -151,8 +157,8 @@
   .lp-preco{font-size:.85rem; color:var(--muted); font-variant-numeric:tabular-nums}
   .linha-prod.sel .lp-nome{color:var(--acc); font-weight:600}
   .step{display:flex; align-items:center; gap:6px}
-  .step button{width:38px; height:38px; padding:0; font-size:1.25rem; line-height:1}
-  .step span{min-width:24px; text-align:center; font-weight:700; font-variant-numeric:tabular-nums}
+  .step button{width:50px; height:50px; min-height:0; padding:0; font-size:1.5rem; line-height:1}
+  .step span{min-width:30px; font-size:1.1rem; text-align:center; font-weight:700; font-variant-numeric:tabular-nums}
   #escolha .cat{margin-top:18px}
 
   #toast{
@@ -179,7 +185,7 @@
   <!-- CARDÁPIO -->
   <section id="tab-cardapio" class="ativa">
     <div class="barra">
-      <input id="busca-cardapio" type="search" placeholder="Buscar no cardápio…" autocomplete="off">
+      <input id="busca-cardapio" type="search" placeholder="Buscar…" autocomplete="off">
       <button id="btn-editar" type="button">✎ Editar</button>
     </div>
     <div id="aviso-edicao" class="aviso-edicao" hidden>Modo de edição ligado: toque em <b>Editar</b> ou <b>Excluir</b> em cada produto. Toque em <b>Concluir</b> quando terminar.</div>
@@ -189,7 +195,7 @@
   <!-- PEDIDOS -->
   <section id="tab-pedidos">
     <div id="resumo" class="resumo"></div>
-    <input id="busca-pedidos" type="search" placeholder="Buscar por nome, mesa ou produto…" autocomplete="off">
+    <input id="busca-pedidos" type="search" placeholder="Buscar nome, mesa ou item…" autocomplete="off">
     <div class="chips" id="filtros">
       <button type="button" data-filtro="hoje" class="ativa">Hoje</button>
       <button type="button" data-filtro="abertos">Não pagos</button>
@@ -374,13 +380,13 @@
     ['Isca de peixe', 45, 'Porções', 'Acompanha molho tártaro'],
   ];
 
+  let pedidos = load(KEY_PED, []);
+  if (!Array.isArray(pedidos)) pedidos = [];
   let produtos = load(KEY_PROD, null);
   if (!Array.isArray(produtos)) {
     produtos = EXEMPLO.map(([nome, preco, categoria, desc]) => ({ id: uid(), nome, preco, categoria, desc }));
     save();
   }
-  let pedidos = load(KEY_PED, []);
-  if (!Array.isArray(pedidos)) pedidos = [];
 
   let tabAtual = 'cardapio';
   let editMode = false;
