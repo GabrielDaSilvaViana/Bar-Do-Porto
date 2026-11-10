@@ -1,0 +1,712 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#0d1b2a">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<title>Bar do Porto — Cardápio e Pedidos</title>
+<style>
+  :root{
+    --bg:#0d1b2a; --card:#15283d; --card2:#1d3452; --line:#27425f;
+    --txt:#eef3f8; --muted:#93a7bd; --acc:#f2a541; --ok:#3ecf8e; --blue:#5aa9e6; --bad:#ef6b6b;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0}
+  body{
+    background:var(--bg); color:var(--txt);
+    font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+    padding-bottom:calc(150px + env(safe-area-inset-bottom));
+    -webkit-tap-highlight-color:transparent;
+  }
+  header{
+    position:sticky; top:0; z-index:5;
+    background:rgba(13,27,42,.94); backdrop-filter:blur(8px);
+    border-bottom:1px solid var(--line);
+    padding:12px 16px; padding-top:calc(12px + env(safe-area-inset-top));
+  }
+  .brand{display:flex; align-items:center; gap:10px; max-width:640px; margin:0 auto}
+  .brand svg{width:34px; height:34px; color:var(--acc); flex:none}
+  .brand h1{font-size:1.25rem; margin:0; letter-spacing:.02em}
+  .brand small{display:block; color:var(--muted); font-size:.78rem; font-weight:400; letter-spacing:0}
+  main{max-width:640px; margin:0 auto; padding:16px}
+  main > section{display:none}
+  main > section.ativa{display:block}
+
+  input,textarea{
+    width:100%; background:var(--card); border:1px solid var(--line); color:var(--txt);
+    border-radius:10px; padding:11px 12px; font:inherit; font-size:16px;
+  }
+  textarea{resize:vertical; min-height:64px}
+  input:focus,textarea:focus{outline:2px solid var(--acc); outline-offset:-1px; border-color:transparent}
+  label{display:block; font-size:.85rem; color:var(--muted); margin:14px 0 6px}
+  label:first-child{margin-top:0}
+  button{
+    font:inherit; cursor:pointer; border:0; border-radius:10px; padding:10px 14px;
+    background:var(--card2); color:var(--txt);
+  }
+  button:disabled{opacity:.35; cursor:default}
+  button.prim{background:var(--acc); color:#1a1205; font-weight:700}
+  button.perigo{color:var(--bad)}
+  button.peq{padding:7px 11px; font-size:.85rem}
+  button.on{background:#1d4a3b; color:var(--ok)}
+
+  .barra{display:flex; gap:8px; align-items:center; margin-bottom:6px}
+  .barra input{flex:1}
+  .barra button{white-space:nowrap}
+  .vazio{color:var(--muted); text-align:center; padding:32px 12px}
+
+  /* Cardápio */
+  .cat{font-size:.78rem; text-transform:uppercase; letter-spacing:.12em; color:var(--acc); margin:22px 0 8px; font-weight:700}
+  .item{
+    display:flex; flex-wrap:wrap; align-items:flex-start; gap:6px 12px;
+    background:var(--card); border:1px solid var(--line); border-radius:12px;
+    padding:12px 14px; margin-bottom:8px;
+  }
+  .item-info{flex:1; min-width:0}
+  .item-nome{font-weight:600}
+  .item-desc{color:var(--muted); font-size:.85rem; margin-top:2px}
+  .item-preco{font-weight:700; color:var(--acc); white-space:nowrap; font-variant-numeric:tabular-nums}
+  .item-acoes{width:100%; display:flex; gap:8px; justify-content:flex-end; margin-top:4px}
+  .aviso-edicao{background:#2a2410; border:1px solid #5a4a1c; color:#f5d48f; border-radius:10px; padding:10px 12px; font-size:.85rem; margin-top:10px}
+
+  /* Pedidos */
+  .resumo{display:grid; grid-template-columns:repeat(3,1fr); gap:8px; margin-bottom:12px}
+  .stat{background:var(--card); border:1px solid var(--line); border-radius:12px; padding:10px}
+  .stat span{display:block; font-size:.72rem; color:var(--muted)}
+  .stat b{display:block; font-size:1.05rem; margin-top:2px; font-variant-numeric:tabular-nums}
+  .chips{display:flex; gap:6px; margin:10px 0 12px; overflow-x:auto}
+  .chips button{border-radius:99px; padding:7px 14px; font-size:.88rem; background:var(--card); border:1px solid var(--line)}
+  .chips button.ativa{background:var(--acc); color:#1a1205; border-color:var(--acc); font-weight:700}
+  .pedido{
+    background:var(--card); border:1px solid var(--line); border-left:4px solid var(--acc);
+    border-radius:12px; padding:12px 14px; margin-bottom:10px;
+  }
+  .pedido.entregue{border-left-color:var(--blue)}
+  .pedido.pago{border-left-color:var(--ok)}
+  .ped-top{display:flex; justify-content:space-between; gap:10px; align-items:flex-start}
+  .ped-nome{font-weight:700; font-size:1.05rem}
+  .ped-nome .mesa{font-weight:400; color:var(--muted); font-size:.9rem}
+  .ped-hora{color:var(--muted); font-size:.85rem; font-variant-numeric:tabular-nums; margin-top:2px}
+  .badge{font-size:.72rem; padding:4px 9px; border-radius:99px; background:#3a2e10; color:var(--acc); white-space:nowrap; font-weight:600}
+  .badge.entregue{background:#14304a; color:var(--blue)}
+  .badge.pago{background:#123a2c; color:var(--ok)}
+  .ped-itens{margin:10px 0 6px; padding:0; list-style:none; font-size:.92rem}
+  .ped-itens li{display:flex; justify-content:space-between; gap:10px; color:#cfdae6; padding:2px 0}
+  .ped-itens li span:last-child{font-variant-numeric:tabular-nums; color:var(--muted)}
+  .ped-obs{font-size:.85rem; color:var(--muted); font-style:italic; margin-bottom:4px}
+  .ped-rodape{display:flex; align-items:center; justify-content:space-between; gap:8px; margin-top:8px; flex-wrap:wrap; border-top:1px dashed var(--line); padding-top:10px}
+  .ped-total{font-weight:700; font-variant-numeric:tabular-nums}
+  .acoes{display:flex; gap:6px; flex-wrap:wrap}
+
+  /* Ajustes */
+  .bloco{background:var(--card); border:1px solid var(--line); border-radius:12px; padding:14px; margin-bottom:12px}
+  .bloco h2{font-size:1rem; margin:0 0 6px}
+  .bloco p{color:var(--muted); font-size:.9rem; margin:0 0 12px; line-height:1.45}
+  .bloco .acoes{gap:8px}
+
+  /* Navegação */
+  nav.bottom{
+    position:fixed; left:0; right:0; bottom:0; z-index:6;
+    background:rgba(13,27,42,.97); border-top:1px solid var(--line);
+    display:flex; justify-content:center; padding-bottom:env(safe-area-inset-bottom);
+  }
+  nav.bottom .wrap{display:flex; width:100%; max-width:640px}
+  nav.bottom button{
+    flex:1; background:none; border-radius:0; padding:10px 4px 9px; color:var(--muted);
+    display:flex; flex-direction:column; align-items:center; gap:3px; font-size:.75rem;
+  }
+  nav.bottom button svg{width:22px; height:22px}
+  nav.bottom button.ativa{color:var(--acc)}
+  .fab{
+    position:fixed; z-index:7; right:max(16px, calc(50% - 304px));
+    bottom:calc(78px + env(safe-area-inset-bottom));
+    background:var(--acc); color:#1a1205; font-weight:700; border-radius:99px;
+    padding:14px 20px; box-shadow:0 8px 24px rgba(0,0,0,.45); font-size:1rem;
+  }
+  .fab[hidden]{display:none}
+
+  /* Diálogos */
+  dialog{
+    border:0; padding:0; background:var(--bg); color:var(--txt);
+    width:100%; max-width:640px; height:100%; height:100dvh; max-height:100dvh; margin:0 auto;
+  }
+  dialog[open]{display:flex; flex-direction:column}
+  dialog::backdrop{background:rgba(0,0,0,.6)}
+  @media (min-width:700px){
+    dialog{height:auto; max-height:90vh; margin:auto; border-radius:16px; border:1px solid var(--line)}
+  }
+  .dlg{display:flex; flex-direction:column; flex:1; min-height:0}
+  .dlg-head{padding:14px 16px; padding-top:calc(14px + env(safe-area-inset-top)); border-bottom:1px solid var(--line); display:flex; justify-content:space-between; align-items:center; gap:10px}
+  .dlg-head h2{margin:0; font-size:1.1rem}
+  .dlg-body{padding:16px; overflow:auto; flex:1; min-height:0}
+  .dlg-foot{padding:12px 16px calc(12px + env(safe-area-inset-bottom)); border-top:1px solid var(--line); display:flex; gap:10px; align-items:center}
+  .dlg-foot .grow{flex:1}
+  .dlg-foot .tot{font-weight:700; font-size:1.1rem; font-variant-numeric:tabular-nums}
+  .dlg-foot .tot small{display:block; font-weight:400; font-size:.78rem; color:var(--muted)}
+  .grid2{display:grid; grid-template-columns:1fr 1fr; gap:10px}
+  .grid2 label{margin-top:14px}
+  .linha-prod{display:flex; align-items:center; gap:10px; padding:9px 0; border-bottom:1px solid var(--line)}
+  .lp-info{flex:1; min-width:0}
+  .lp-preco{font-size:.85rem; color:var(--muted); font-variant-numeric:tabular-nums}
+  .linha-prod.sel .lp-nome{color:var(--acc); font-weight:600}
+  .step{display:flex; align-items:center; gap:6px}
+  .step button{width:38px; height:38px; padding:0; font-size:1.25rem; line-height:1}
+  .step span{min-width:24px; text-align:center; font-weight:700; font-variant-numeric:tabular-nums}
+  #escolha .cat{margin-top:18px}
+
+  #toast{
+    position:fixed; left:50%; bottom:calc(140px + env(safe-area-inset-bottom)); transform:translateX(-50%) translateY(20px);
+    background:#f4f7fb; color:#0d1b2a; padding:10px 16px; border-radius:10px; font-size:.92rem; font-weight:600;
+    opacity:0; pointer-events:none; transition:.2s; z-index:50; max-width:90vw; text-align:center;
+    box-shadow:0 8px 24px rgba(0,0,0,.4);
+  }
+  #toast.show{opacity:1; transform:translateX(-50%) translateY(0)}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="brand">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+      <circle cx="12" cy="5" r="2.2"/><path d="M12 7.2V21"/><path d="M8 11h8"/><path d="M4.5 14.5c0 3.6 3.4 6.5 7.5 6.5s7.5-2.9 7.5-6.5"/><path d="M3 15.5l1.5-1.5 1.5 1.5"/><path d="M18 15.5l1.5-1.5 1.5 1.5"/>
+    </svg>
+    <h1>Bar do Porto <small id="subtitulo">Cardápio</small></h1>
+  </div>
+</header>
+
+<main>
+  <!-- CARDÁPIO -->
+  <section id="tab-cardapio" class="ativa">
+    <div class="barra">
+      <input id="busca-cardapio" type="search" placeholder="Buscar no cardápio…" autocomplete="off">
+      <button id="btn-editar" type="button">✎ Editar</button>
+    </div>
+    <div id="aviso-edicao" class="aviso-edicao" hidden>Modo de edição ligado: toque em <b>Editar</b> ou <b>Excluir</b> em cada produto. Toque em <b>Concluir</b> quando terminar.</div>
+    <div id="lista-cardapio"></div>
+  </section>
+
+  <!-- PEDIDOS -->
+  <section id="tab-pedidos">
+    <div id="resumo" class="resumo"></div>
+    <input id="busca-pedidos" type="search" placeholder="Buscar por nome, mesa ou produto…" autocomplete="off">
+    <div class="chips" id="filtros">
+      <button type="button" data-filtro="hoje" class="ativa">Hoje</button>
+      <button type="button" data-filtro="abertos">Não pagos</button>
+      <button type="button" data-filtro="todos">Todos</button>
+    </div>
+    <div id="lista-pedidos"></div>
+  </section>
+
+  <!-- AJUSTES -->
+  <section id="tab-ajustes">
+    <div class="bloco">
+      <h2>Onde ficam os dados</h2>
+      <p>Cardápio e pedidos ficam salvos <b>neste aparelho, neste navegador</b>. Se abrir o site em outro celular, ele começa vazio. Para passar os dados para outro aparelho, use o backup abaixo.</p>
+    </div>
+    <div class="bloco">
+      <h2>Backup</h2>
+      <p>Baixe um arquivo com tudo (cardápio + pedidos) ou carregue um backup salvo antes.</p>
+      <div class="acoes">
+        <button type="button" class="prim" id="btn-exportar">Baixar backup</button>
+        <button type="button" id="btn-importar">Carregar backup</button>
+        <input type="file" id="arquivo-backup" accept=".json,application/json" hidden>
+      </div>
+    </div>
+    <div class="bloco">
+      <h2>Limpeza</h2>
+      <p>Apague pedidos antigos para manter a lista leve.</p>
+      <div class="acoes">
+        <button type="button" id="btn-limpar-pagos">Apagar pedidos pagos de dias anteriores</button>
+        <button type="button" class="perigo" id="btn-limpar-pedidos">Apagar todos os pedidos</button>
+        <button type="button" class="perigo" id="btn-reset">Apagar tudo (cardápio e pedidos)</button>
+      </div>
+    </div>
+  </section>
+</main>
+
+<button class="fab" id="fab" type="button">+ Produto</button>
+
+<nav class="bottom">
+  <div class="wrap">
+    <button type="button" data-tab="cardapio" class="ativa">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M5 3h11a3 3 0 0 1 3 3v15H8a3 3 0 0 1-3-3z"/><path d="M5 18a3 3 0 0 1 3-3h11"/><path d="M9 7h6M9 10.5h4"/></svg>
+      Cardápio
+    </button>
+    <button type="button" data-tab="pedidos">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3h12v18l-3-2-3 2-3-2-3 2z"/><path d="M9 8h6M9 12h6M9 16h3"/></svg>
+      Pedidos
+    </button>
+    <button type="button" data-tab="ajustes">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg>
+      Ajustes
+    </button>
+  </div>
+</nav>
+
+<!-- Diálogo: produto -->
+<dialog id="dlg-produto">
+  <form id="form-produto" class="dlg" novalidate>
+    <div class="dlg-head">
+      <h2 id="dp-titulo">Novo produto</h2>
+      <button type="button" class="peq" data-fechar>Fechar</button>
+    </div>
+    <div class="dlg-body">
+      <label for="p-nome">Nome do produto</label>
+      <input id="p-nome" name="nome" placeholder="Ex.: Caipirinha de limão" autocomplete="off" required>
+      <div class="grid2">
+        <div>
+          <label for="p-preco">Preço (R$)</label>
+          <input id="p-preco" name="preco" inputmode="decimal" placeholder="Ex.: 18,00" autocomplete="off" required>
+        </div>
+        <div>
+          <label for="p-cat">Categoria</label>
+          <input id="p-cat" name="categoria" list="lista-categorias" placeholder="Ex.: Drinks" autocomplete="off">
+          <datalist id="lista-categorias"></datalist>
+        </div>
+      </div>
+      <label for="p-desc">Descrição (opcional)</label>
+      <textarea id="p-desc" name="desc" placeholder="Ex.: cachaça, limão, açúcar e gelo"></textarea>
+    </div>
+    <div class="dlg-foot">
+      <button type="button" data-fechar>Cancelar</button>
+      <span class="grow"></span>
+      <button type="submit" class="prim">Salvar produto</button>
+    </div>
+  </form>
+</dialog>
+
+<!-- Diálogo: pedido -->
+<dialog id="dlg-pedido">
+  <form id="form-pedido" class="dlg" novalidate>
+    <div class="dlg-head">
+      <h2 id="dpe-titulo">Novo pedido</h2>
+      <button type="button" class="peq" data-fechar>Fechar</button>
+    </div>
+    <div class="dlg-body">
+      <label for="o-cliente">Quem pediu</label>
+      <input id="o-cliente" name="cliente" placeholder="Nome do cliente" autocomplete="off" required>
+      <div class="grid2">
+        <div>
+          <label for="o-mesa">Mesa / comanda</label>
+          <input id="o-mesa" name="mesa" placeholder="Ex.: 5" autocomplete="off">
+        </div>
+        <div>
+          <label for="o-quando">Data e hora</label>
+          <input id="o-quando" name="quando" type="datetime-local">
+        </div>
+      </div>
+      <label for="o-busca">Itens do pedido</label>
+      <input id="o-busca" name="buscaProd" type="search" placeholder="Buscar produto…" autocomplete="off">
+      <div id="escolha"></div>
+      <label for="o-obs">Observação (opcional)</label>
+      <textarea id="o-obs" name="obs" placeholder="Ex.: sem gelo, bem passado…"></textarea>
+    </div>
+    <div class="dlg-foot">
+      <div class="tot grow"><small id="dpe-qtd">Nenhum item</small><span id="dpe-total">R$ 0,00</span></div>
+      <button type="submit" class="prim">Salvar pedido</button>
+    </div>
+  </form>
+</dialog>
+
+<div id="toast" role="status" aria-live="polite"></div>
+
+<script>
+(() => {
+  'use strict';
+
+  /* ---------- Utilidades ---------- */
+  const $ = s => document.querySelector(s);
+  const $$ = s => document.querySelectorAll(s);
+  const KEY_PROD = 'bardoporto_produtos';
+  const KEY_PED = 'bardoporto_pedidos';
+  const brl = v => Number(v || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+  const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
+  const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+  const z = n => String(n).padStart(2, '0');
+  const toLocalInput = d => `${d.getFullYear()}-${z(d.getMonth() + 1)}-${z(d.getDate())}T${z(d.getHours())}:${z(d.getMinutes())}`;
+  const mesmoDia = (a, b) => a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate();
+  const totalPed = p => p.itens.reduce((s, i) => s + i.preco * i.qtd, 0);
+
+  function parsePreco(s) {
+    s = String(s).trim().replace(/[R$\s]/g, '');
+    if (s.includes(',')) s = s.replace(/\./g, '').replace(',', '.');
+    const n = Number(s);
+    return s !== '' && Number.isFinite(n) && n >= 0 ? Math.round(n * 100) / 100 : NaN;
+  }
+
+  function load(k, fallback) {
+    try { const v = JSON.parse(localStorage.getItem(k)); return v ?? fallback; }
+    catch { return fallback; }
+  }
+  function save() {
+    try {
+      localStorage.setItem(KEY_PROD, JSON.stringify(produtos));
+      localStorage.setItem(KEY_PED, JSON.stringify(pedidos));
+    } catch {
+      toast('Não foi possível salvar neste navegador');
+    }
+  }
+
+  let toastTimer;
+  function toast(msg) {
+    const t = $('#toast');
+    (document.querySelector('dialog[open]') || document.body).appendChild(t);
+    t.textContent = msg;
+    t.classList.add('show');
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => t.classList.remove('show'), 2200);
+  }
+
+  /* ---------- Dados ---------- */
+  const EXEMPLO = [
+    ['Cerveja long neck', 9, 'Cervejas', ''],
+    ['Cerveja 600 ml', 14, 'Cervejas', ''],
+    ['Chopp 300 ml', 10, 'Cervejas', ''],
+    ['Caipirinha de limão', 18, 'Drinks', 'Cachaça, limão, açúcar e gelo'],
+    ['Caipiroska', 20, 'Drinks', 'Vodka, fruta da casa e gelo'],
+    ['Gin tônica', 25, 'Drinks', ''],
+    ['Refrigerante lata', 6, 'Sem álcool', ''],
+    ['Água mineral', 4, 'Sem álcool', ''],
+    ['Suco natural', 9, 'Sem álcool', ''],
+    ['Batata frita', 28, 'Porções', ''],
+    ['Calabresa acebolada', 32, 'Porções', ''],
+    ['Isca de peixe', 45, 'Porções', 'Acompanha molho tártaro'],
+  ];
+
+  let produtos = load(KEY_PROD, null);
+  if (!Array.isArray(produtos)) {
+    produtos = EXEMPLO.map(([nome, preco, categoria, desc]) => ({ id: uid(), nome, preco, categoria, desc }));
+    save();
+  }
+  let pedidos = load(KEY_PED, []);
+  if (!Array.isArray(pedidos)) pedidos = [];
+
+  let tabAtual = 'cardapio';
+  let editMode = false;
+  let filtro = 'hoje';
+  let ultimaCategoria = '';
+
+  const categorias = () => [...new Set(produtos.map(p => p.categoria || 'Outros'))];
+  function agrupar(lista) {
+    const g = {};
+    lista.forEach(p => { const c = p.categoria || 'Outros'; (g[c] = g[c] || []).push(p); });
+    return g;
+  }
+
+  /* ---------- Abas ---------- */
+  const TITULOS = { cardapio: 'Cardápio', pedidos: 'Pedidos', ajustes: 'Ajustes' };
+  function trocarAba(t) {
+    tabAtual = t;
+    $$('main > section').forEach(s => s.classList.toggle('ativa', s.id === 'tab-' + t));
+    $$('nav.bottom button').forEach(b => b.classList.toggle('ativa', b.dataset.tab === t));
+    $('#subtitulo').textContent = TITULOS[t];
+    const fab = $('#fab');
+    fab.hidden = t === 'ajustes';
+    fab.textContent = t === 'cardapio' ? '+ Produto' : '+ Novo pedido';
+    render();
+    window.scrollTo(0, 0);
+  }
+  $$('nav.bottom button').forEach(b => b.addEventListener('click', () => trocarAba(b.dataset.tab)));
+  $('#fab').addEventListener('click', () => tabAtual === 'cardapio' ? abrirProduto() : abrirPedido());
+
+  function render() {
+    if (tabAtual === 'cardapio') renderCardapio();
+    if (tabAtual === 'pedidos') renderPedidos();
+  }
+
+  /* ---------- Cardápio ---------- */
+  function renderCardapio() {
+    const el = $('#lista-cardapio');
+    $('#btn-editar').textContent = editMode ? '✓ Concluir' : '✎ Editar';
+    $('#btn-editar').classList.toggle('prim', editMode);
+    $('#aviso-edicao').hidden = !editMode;
+    if (!produtos.length) {
+      el.innerHTML = '<p class="vazio">O cardápio está vazio.<br>Toque em <b>+ Produto</b> para adicionar o primeiro.</p>';
+      return;
+    }
+    const q = $('#busca-cardapio').value.trim().toLowerCase();
+    const lista = produtos.filter(p => !q || p.nome.toLowerCase().includes(q) || (p.categoria || '').toLowerCase().includes(q));
+    if (!lista.length) { el.innerHTML = '<p class="vazio">Nada encontrado.</p>'; return; }
+    el.innerHTML = Object.entries(agrupar(lista)).map(([cat, itens]) =>
+      `<h2 class="cat">${esc(cat)}</h2>` + itens.map(p => `
+        <div class="item">
+          <div class="item-info">
+            <div class="item-nome">${esc(p.nome)}</div>
+            ${p.desc ? `<div class="item-desc">${esc(p.desc)}</div>` : ''}
+          </div>
+          <div class="item-preco">${brl(p.preco)}</div>
+          ${editMode ? `<div class="item-acoes">
+            <button type="button" class="peq" data-edit="${p.id}">Editar</button>
+            <button type="button" class="peq perigo" data-del="${p.id}">Excluir</button>
+          </div>` : ''}
+        </div>`).join('')
+    ).join('');
+  }
+
+  $('#busca-cardapio').addEventListener('input', renderCardapio);
+  $('#btn-editar').addEventListener('click', () => { editMode = !editMode; renderCardapio(); });
+  $('#lista-cardapio').addEventListener('click', e => {
+    const b = e.target.closest('button'); if (!b) return;
+    if (b.dataset.edit) abrirProduto(b.dataset.edit);
+    if (b.dataset.del) {
+      const p = produtos.find(x => x.id === b.dataset.del);
+      if (p && confirm(`Excluir "${p.nome}" do cardápio?\n(Pedidos já feitos não são afetados.)`)) {
+        produtos = produtos.filter(x => x.id !== p.id);
+        save(); renderCardapio(); toast('Produto excluído');
+      }
+    }
+  });
+
+  let produtoEditando = null;
+  function abrirProduto(id) {
+    produtoEditando = id ? produtos.find(p => p.id === id) : null;
+    $('#dp-titulo').textContent = produtoEditando ? 'Editar produto' : 'Novo produto';
+    const f = $('#form-produto');
+    f.nome.value = produtoEditando?.nome || '';
+    f.preco.value = produtoEditando ? produtoEditando.preco.toFixed(2).replace('.', ',') : '';
+    f.categoria.value = produtoEditando ? (produtoEditando.categoria || '') : ultimaCategoria;
+    f.desc.value = produtoEditando?.desc || '';
+    $('#lista-categorias').innerHTML = categorias().map(c => `<option value="${esc(c)}">`).join('');
+    $('#dlg-produto').showModal();
+    if (!produtoEditando) setTimeout(() => f.nome.focus(), 60);
+  }
+
+  $('#form-produto').addEventListener('submit', e => {
+    e.preventDefault();
+    const f = e.target;
+    const nome = f.nome.value.trim();
+    const preco = parsePreco(f.preco.value);
+    if (!nome) { toast('Coloque o nome do produto'); f.nome.focus(); return; }
+    if (isNaN(preco)) { toast('Preço inválido. Ex.: 12,50'); f.preco.focus(); return; }
+    const dados = { nome, preco, categoria: f.categoria.value.trim() || 'Outros', desc: f.desc.value.trim() };
+    const editando = !!produtoEditando;
+    if (editando) Object.assign(produtoEditando, dados);
+    else produtos.push({ id: uid(), ...dados });
+    ultimaCategoria = dados.categoria;
+    save();
+    $('#dlg-produto').close();
+    renderCardapio();
+    toast(editando ? 'Produto atualizado' : 'Produto adicionado');
+  });
+
+  /* ---------- Novo pedido ---------- */
+  let pedidoEditando = null;
+  let carrinho = {};
+
+  function abrirPedido(id) {
+    if (!produtos.length && !id) {
+      toast('Cadastre produtos no cardápio primeiro');
+      trocarAba('cardapio');
+      return;
+    }
+    pedidoEditando = id ? pedidos.find(p => p.id === id) : null;
+    carrinho = {};
+    if (pedidoEditando) pedidoEditando.itens.forEach(i => { carrinho[i.produtoId] = { nome: i.nome, preco: i.preco, qtd: i.qtd }; });
+    const f = $('#form-pedido');
+    f.cliente.value = pedidoEditando?.cliente || '';
+    f.mesa.value = pedidoEditando?.mesa || '';
+    f.quando.value = toLocalInput(pedidoEditando ? new Date(pedidoEditando.criadoEm) : new Date());
+    f.obs.value = pedidoEditando?.obs || '';
+    f.buscaProd.value = '';
+    $('#dpe-titulo').textContent = pedidoEditando ? 'Editar pedido' : 'Novo pedido';
+    renderEscolha();
+    $('#dlg-pedido').showModal();
+    $('#dlg-pedido .dlg-body').scrollTop = 0;
+    if (!pedidoEditando) setTimeout(() => f.cliente.focus(), 60);
+  }
+
+  function renderEscolha() {
+    const q = $('#form-pedido').buscaProd.value.trim().toLowerCase();
+    const lista = produtos.filter(p => !q || p.nome.toLowerCase().includes(q) || (p.categoria || '').toLowerCase().includes(q));
+    const grupos = agrupar(lista);
+    const fora = Object.entries(carrinho)
+      .filter(([pid]) => !produtos.some(p => p.id === pid))
+      .map(([pid, c]) => ({ id: pid, nome: c.nome, preco: c.preco }));
+    if (fora.length) grupos['Fora do cardápio atual'] = fora;
+    const html = Object.entries(grupos).map(([cat, itens]) =>
+      `<div class="cat">${esc(cat)}</div>` + itens.map(p => {
+        const c = carrinho[p.id];
+        const qtd = c?.qtd || 0;
+        return `<div class="linha-prod ${qtd ? 'sel' : ''}">
+          <div class="lp-info"><div class="lp-nome">${esc(p.nome)}</div><div class="lp-preco">${brl(c ? c.preco : p.preco)}</div></div>
+          <div class="step">
+            <button type="button" data-menos="${p.id}" ${qtd ? '' : 'disabled'} aria-label="Tirar um">−</button>
+            <span>${qtd}</span>
+            <button type="button" data-mais="${p.id}" aria-label="Adicionar um">+</button>
+          </div>
+        </div>`;
+      }).join('')
+    ).join('');
+    $('#escolha').innerHTML = html || '<p class="vazio">Nenhum produto encontrado.</p>';
+    const itens = Object.values(carrinho);
+    const n = itens.reduce((s, c) => s + c.qtd, 0);
+    $('#dpe-total').textContent = brl(itens.reduce((s, c) => s + c.preco * c.qtd, 0));
+    $('#dpe-qtd').textContent = n ? `${n} ${n > 1 ? 'itens' : 'item'}` : 'Nenhum item';
+  }
+
+  $('#o-busca').addEventListener('input', renderEscolha);
+  $('#escolha').addEventListener('click', e => {
+    const b = e.target.closest('button'); if (!b) return;
+    if (b.dataset.mais) {
+      const pid = b.dataset.mais;
+      if (!carrinho[pid]) {
+        const p = produtos.find(x => x.id === pid); if (!p) return;
+        carrinho[pid] = { nome: p.nome, preco: p.preco, qtd: 0 };
+      }
+      carrinho[pid].qtd++;
+    } else if (b.dataset.menos) {
+      const pid = b.dataset.menos;
+      if (carrinho[pid] && --carrinho[pid].qtd <= 0) delete carrinho[pid];
+    }
+    renderEscolha();
+  });
+
+  $('#form-pedido').addEventListener('submit', e => {
+    e.preventDefault();
+    const f = e.target;
+    const cliente = f.cliente.value.trim();
+    if (!cliente) { toast('Coloque o nome de quem pediu'); f.cliente.focus(); return; }
+    const itens = Object.entries(carrinho).map(([produtoId, c]) => ({ produtoId, nome: c.nome, preco: c.preco, qtd: c.qtd }));
+    if (!itens.length) { toast('Adicione pelo menos um item'); return; }
+    let quando = new Date(f.quando.value);
+    if (isNaN(quando)) quando = new Date();
+    const dados = { cliente, mesa: f.mesa.value.trim(), itens, obs: f.obs.value.trim(), criadoEm: quando.toISOString() };
+    const editando = !!pedidoEditando;
+    if (editando) Object.assign(pedidoEditando, dados);
+    else pedidos.push({ id: uid(), ...dados, entregue: false, pago: false });
+    save();
+    $('#dlg-pedido').close();
+    if (tabAtual !== 'pedidos') trocarAba('pedidos'); else renderPedidos();
+    toast(editando ? 'Pedido atualizado' : `Pedido de ${cliente} anotado`);
+  });
+
+  /* ---------- Lista de pedidos ---------- */
+  function renderPedidos() {
+    const agora = new Date();
+    const deHoje = pedidos.filter(p => mesmoDia(new Date(p.criadoEm), agora));
+    const naoPagos = pedidos.filter(p => !p.pago);
+    $('#resumo').innerHTML = `
+      <div class="stat"><span>Pedidos hoje</span><b>${deHoje.length}</b></div>
+      <div class="stat"><span>Total hoje</span><b>${brl(deHoje.reduce((s, p) => s + totalPed(p), 0))}</b></div>
+      <div class="stat"><span>A receber</span><b>${brl(naoPagos.reduce((s, p) => s + totalPed(p), 0))}</b></div>`;
+
+    const q = $('#busca-pedidos').value.trim().toLowerCase();
+    let lista = filtro === 'hoje' ? deHoje : filtro === 'abertos' ? naoPagos : pedidos.slice();
+    if (q) lista = lista.filter(p =>
+      p.cliente.toLowerCase().includes(q) ||
+      (p.mesa || '').toLowerCase().includes(q) ||
+      p.itens.some(i => i.nome.toLowerCase().includes(q)));
+    lista.sort((a, b) => b.criadoEm.localeCompare(a.criadoEm));
+
+    const el = $('#lista-pedidos');
+    if (!lista.length) {
+      el.innerHTML = `<p class="vazio">${pedidos.length ? 'Nenhum pedido aqui.' : 'Nenhum pedido ainda.<br>Toque em <b>+ Novo pedido</b> para anotar o primeiro.'}</p>`;
+      return;
+    }
+    el.innerHTML = lista.map(p => {
+      const d = new Date(p.criadoEm);
+      const hora = d.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+      const dia = mesmoDia(d, agora) ? 'Hoje' : d.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: '2-digit' });
+      const st = p.pago ? 'pago' : p.entregue ? 'entregue' : '';
+      const badge = p.pago ? 'Pago' : p.entregue ? 'Entregue' : 'Aguardando';
+      const mesa = p.mesa ? (/^\d+$/.test(p.mesa) ? 'Mesa ' + p.mesa : p.mesa) : '';
+      return `<article class="pedido ${st}">
+        <div class="ped-top">
+          <div>
+            <div class="ped-nome">${esc(p.cliente)}${mesa ? ` <span class="mesa">· ${esc(mesa)}</span>` : ''}</div>
+            <div class="ped-hora">${dia} às ${hora}</div>
+          </div>
+          <span class="badge ${st}">${badge}</span>
+        </div>
+        <ul class="ped-itens">${p.itens.map(i => `<li><span>${i.qtd}× ${esc(i.nome)}</span><span>${brl(i.preco * i.qtd)}</span></li>`).join('')}</ul>
+        ${p.obs ? `<div class="ped-obs">Obs.: ${esc(p.obs)}</div>` : ''}
+        <div class="ped-rodape">
+          <div class="ped-total">Total ${brl(totalPed(p))}</div>
+          <div class="acoes">
+            <button type="button" class="peq ${p.entregue ? 'on' : ''}" data-entregue="${p.id}">${p.entregue ? '✓ Entregue' : 'Entregar'}</button>
+            <button type="button" class="peq ${p.pago ? 'on' : ''}" data-pago="${p.id}">${p.pago ? '✓ Pago' : 'Pagar'}</button>
+            <button type="button" class="peq" data-editped="${p.id}">Editar</button>
+            <button type="button" class="peq perigo" data-delped="${p.id}">Excluir</button>
+          </div>
+        </div>
+      </article>`;
+    }).join('');
+  }
+
+  $('#busca-pedidos').addEventListener('input', renderPedidos);
+  $('#filtros').addEventListener('click', e => {
+    const b = e.target.closest('button'); if (!b) return;
+    filtro = b.dataset.filtro;
+    $$('#filtros button').forEach(x => x.classList.toggle('ativa', x === b));
+    renderPedidos();
+  });
+  $('#lista-pedidos').addEventListener('click', e => {
+    const b = e.target.closest('button'); if (!b) return;
+    const id = b.dataset.entregue || b.dataset.pago || b.dataset.editped || b.dataset.delped;
+    const p = pedidos.find(x => x.id === id); if (!p) return;
+    if (b.dataset.entregue) { p.entregue = !p.entregue; save(); renderPedidos(); }
+    if (b.dataset.pago) { p.pago = !p.pago; if (p.pago) p.entregue = true; save(); renderPedidos(); }
+    if (b.dataset.editped) abrirPedido(id);
+    if (b.dataset.delped && confirm(`Excluir o pedido de ${p.cliente}?`)) {
+      pedidos = pedidos.filter(x => x.id !== id);
+      save(); renderPedidos(); toast('Pedido excluído');
+    }
+  });
+
+  /* ---------- Diálogos: fechar ---------- */
+  $$('[data-fechar]').forEach(b => b.addEventListener('click', () => b.closest('dialog').close()));
+
+  /* ---------- Ajustes ---------- */
+  $('#btn-exportar').addEventListener('click', () => {
+    const dados = { app: 'bar-do-porto', versao: 1, exportadoEm: new Date().toISOString(), produtos, pedidos };
+    const blob = new Blob([JSON.stringify(dados, null, 2)], { type: 'application/json' });
+    const a = document.createElement('a');
+    const d = new Date();
+    a.href = URL.createObjectURL(blob);
+    a.download = `bar-do-porto-backup-${d.getFullYear()}-${z(d.getMonth() + 1)}-${z(d.getDate())}.json`;
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(a.href), 2000);
+    toast('Backup baixado');
+  });
+  $('#btn-importar').addEventListener('click', () => $('#arquivo-backup').click());
+  $('#arquivo-backup').addEventListener('change', e => {
+    const file = e.target.files[0]; if (!file) return;
+    const r = new FileReader();
+    r.onload = () => {
+      try {
+        const d = JSON.parse(r.result);
+        if (!Array.isArray(d.produtos) || !Array.isArray(d.pedidos)) throw new Error();
+        if (!confirm(`Carregar este backup?\n${d.produtos.length} produtos e ${d.pedidos.length} pedidos.\nOs dados atuais deste aparelho serão substituídos.`)) return;
+        produtos = d.produtos; pedidos = d.pedidos;
+        save(); toast('Backup carregado'); trocarAba('cardapio');
+      } catch {
+        toast('Esse arquivo não é um backup válido');
+      }
+    };
+    r.readAsText(file);
+    e.target.value = '';
+  });
+  $('#btn-limpar-pagos').addEventListener('click', () => {
+    const hoje = new Date();
+    const apagar = pedidos.filter(p => p.pago && !mesmoDia(new Date(p.criadoEm), hoje));
+    if (!apagar.length) { toast('Nenhum pedido pago de dias anteriores'); return; }
+    if (!confirm(`Apagar ${apagar.length} pedido(s) pagos de dias anteriores?`)) return;
+    pedidos = pedidos.filter(p => !apagar.includes(p));
+    save(); toast('Pedidos antigos apagados');
+  });
+  $('#btn-limpar-pedidos').addEventListener('click', () => {
+    if (!pedidos.length) { toast('Não há pedidos'); return; }
+    if (!confirm('Apagar TODOS os pedidos? Isso não pode ser desfeito.')) return;
+    pedidos = []; save(); toast('Todos os pedidos foram apagados');
+  });
+  $('#btn-reset').addEventListener('click', () => {
+    if (!confirm('Apagar o cardápio E todos os pedidos? Isso não pode ser desfeito.')) return;
+    produtos = []; pedidos = []; save(); toast('Tudo apagado'); trocarAba('cardapio');
+  });
+
+  trocarAba('cardapio');
+})();
+</script>
+</body>
+</html>
